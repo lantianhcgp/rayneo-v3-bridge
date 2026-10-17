@@ -14,7 +14,7 @@
     <application
         android:name=".App"
         android:label="RayNeo Bridge"
-        android:icon="@android:drawable/stat_sys_data_bluetooth"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
         <activity

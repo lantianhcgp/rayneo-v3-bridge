@@ -22,7 +22,8 @@ import java.net.Socket
 class McpServer {
     @Volatile private var serverSocket: ServerSocket? = null
     @Volatile private var running = false
-    var port: Int = Config.mcpPort
+    // 注意：不能在构造期读 Config（companion 初始化早于 Application.onCreate，prefs 未就绪会秒崩）
+    var port: Int = 0
         private set
 
     fun start() {

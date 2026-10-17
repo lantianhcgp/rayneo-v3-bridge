@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 眼镜造型：两个圆角框 + 鼻梁 -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="5" android:fillColor="#00000000"
+        android:pathData="M22,50 h20 a6,6 0 0 1 6,6 v6 a8,8 0 0 1 -8,8 h-16 a8,8 0 0 1 -8,-8 v-6 a6,6 0 0 1 6,-6 z" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="5" android:fillColor="#00000000"
+        android:pathData="M66,50 h20 a6,6 0 0 1 6,6 v6 a8,8 0 0 1 -8,8 h-16 a8,8 0 0 1 -8,-8 v-6 a6,6 0 0 1 6,-6 z" />
+    <path android:strokeColor="#7C6CFF" android:strokeWidth="5" android:pathData="M48,58 h12" />
+</vector>
