@@ -23,6 +23,37 @@ class BleLink {
 
     fun recentMessages(): List<String> = synchronized(msgs) { msgs.takeLast(50) }
 
+    /** 从缓冲里切出所有完整的 JSON 对象（括号平衡 + 字符串感知） */
+    private fun drainJsonBuffer() {
+        while (true) {
+            val bytes = synchronized(buf) { buf.toByteArray() }
+            // 跳到第一个 '{'
+            val start = bytes.indexOfFirst { it == '{'.code.toByte() }
+            if (start < 0) { synchronized(buf) { if (buf.size() > 0) buf.reset() }; return }
+            if (start > 0) synchronized(buf) {
+                val cur = buf.toByteArray()
+                buf.reset(); buf.write(cur, start, cur.size - start)
+            }
+            val cur = synchronized(buf) { buf.toByteArray() }
+            var depth = 0; var inStr = false; var esc = false; var end = -1
+            for (i in cur.indices) {
+                val c = cur[i].toInt().toChar()
+                if (esc) { esc = false; continue }
+                when {
+                    c == '\\' && inStr -> esc = true
+                    c == '"' -> inStr = !inStr
+                    !inStr && c == '{' -> depth++
+                    !inStr && c == '}' -> { depth--; if (depth == 0) { end = i + 1; break } }
+                }
+            }
+            if (end < 0) return // 未收齐
+            val msg = String(cur, 0, end, Charsets.UTF_8)
+            synchronized(buf) { buf.reset(); buf.write(cur, end, cur.size - end) }
+            synchronized(msgs) { msgs.addLast(msg); while (msgs.size > 100) msgs.removeFirst() }
+            Logx.i("Ble", "json<- (${msg.length}B) ${msg.take(400)}")
+        }
+    }
+
     companion object {
         val SVC = UUID.fromString("0000b81d-0000-1000-8000-00805f9b34fb")
         val CHAR_WRITE = UUID.fromString("ea8b70d5-2bd3-49ab-9c31-9c38b2c3c4f9")
@@ -56,17 +87,11 @@ class BleLink {
             val v = ch.value ?: return
             if (ch.uuid != CHAR_RECEIVE && ch.uuid != CHAR_HEART) { Logx.i("Ble", "rx other char=${ch.uuid} len=${v.size}"); return }
             if (v.isEmpty()) return
-            val seq = v[0].toInt() and 0xFF
-            if (seq == 1) buf.reset()
+            // 每个 ATT 包首字节 = 眼镜固件的循环计数器(01/02/00..)，直接剥离；边界用 JSON 括号平衡判定
             buf.write(v, 1, v.size - 1)
-            Logx.i("Ble", "rx seq=$seq len=${v.size}")
+            Logx.i("Ble", "rx cnt=${v[0]} len=${v.size}")
             rxListener?.invoke(v)
-            if (seq == 0) {
-                val msg = String(buf.toByteArray(), Charsets.UTF_8)
-                buf.reset()
-                synchronized(msgs) { msgs.addLast(msg); while (msgs.size > 100) msgs.removeFirst() }
-                Logx.i("Ble", "json<- ${msg.take(400)}")
-            }
+            drainJsonBuffer()
         }
         override fun onCharacteristicWrite(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) {
             if (status != 0) Logx.e("Ble", "write status=$status")
