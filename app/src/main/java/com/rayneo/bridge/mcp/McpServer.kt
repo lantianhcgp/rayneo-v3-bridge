@@ -143,6 +143,10 @@ class McpServer {
             Json.write(mapOf("connecting" to ok, "target" to (mac ?: LinkManager.status()["mac"])))
         }
         "disconnect" -> { LinkManager.disconnect(); LinkManager.ble.disconnect(); Json.write(mapOf("ok" to true)) }
+        "ble_send" -> {
+            val hex = args["hex"] as? String ?: return Json.write(mapOf("error" to "no hex"))
+            Json.write(mapOf("sent" to LinkManager.ble.sendHex(hex)))
+        }
         "connect_ble" -> {
             val mac = args["mac"] as? String
             val ok = LinkManager.ble.connect(mac)
@@ -189,6 +193,7 @@ class McpServer {
             tool("connect", "连接眼镜 SPP", mapOf("mac" to prop("string", "目标 MAC，省略用已存配置"))),
             tool("disconnect", "断开眼镜", mapOf()),
             tool("connect_ble", "连接眼镜 BLE GATT（b81d 控制链）", mapOf("mac" to prop("string", "目标 MAC，省略用配置"))),
+            tool("ble_send", "向眼镜 BLE write 特征值发十六进制帧", mapOf("hex" to prop("string", "hex 载荷，如 AB 55 00 00"))),
             tool("assistant_send", "向眼镜发助手消息（msgType=5 为 ASR 文本，会显示/朗读）",
                 mapOf("msgType" to prop("integer", "助手消息类型"), "text" to prop("string", "文本内容"))),
             tool("assistant_events", "最近50条助手通道消息观测（类型/方向/长度/头部hex）", mapOf()),

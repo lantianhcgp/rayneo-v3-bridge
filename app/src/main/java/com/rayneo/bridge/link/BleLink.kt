@@ -72,5 +72,17 @@ class BleLink {
     }
 
     @SuppressLint("MissingPermission")
+    fun sendHex(hex: String): Boolean {
+        val g = gatt ?: return false
+        val ch = g.getService(SVC)?.getCharacteristic(CHAR_WRITE) ?: return false
+        val bytes = hex.replace(" ", "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        ch.value = bytes
+        val ok = g.writeCharacteristic(ch)
+        Logx.i("Ble", "tx ${bytes.size}B hex=$hex ok=$ok")
+        return ok
+    }
+
+    @SuppressLint("MissingPermission")
     fun disconnect() { gatt?.disconnect(); gatt?.close(); gatt = null; state = State.IDLE }
 }
