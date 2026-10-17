@@ -19,6 +19,7 @@ class BleLink {
     @Volatile private var gatt: BluetoothGatt? = null
     var rxListener: ((ByteArray) -> Unit)? = null
     private val buf = java.io.ByteArrayOutputStream()
+    private val writeGate = Object()
     private val msgs = ArrayDeque<String>()
 
     fun recentMessages(): List<String> = synchronized(msgs) { msgs.takeLast(50) }
@@ -96,6 +97,7 @@ class BleLink {
         }
         override fun onCharacteristicWrite(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) {
             if (status != 0) Logx.e("Ble", "write status=$status")
+            synchronized(writeGate) { writeGate.notifyAll() }
         }
     }
 
@@ -134,9 +136,11 @@ class BleLink {
         parts.forEachIndexed { i, part ->
             val seq = if (i == parts.lastIndex) 0 else i + 1
             val bytes = byteArrayOf(seq.toByte()) + part.toByteArray()
-            ch.value = bytes
-            if (!g.writeCharacteristic(ch)) { Logx.e("Ble", "chunk $i write failed"); return false }
-            Thread.sleep(40)
+            synchronized(writeGate) {
+                ch.value = bytes
+                if (!g.writeCharacteristic(ch)) { Logx.i("Ble", "chunk $i write failed"); return false }
+                writeGate.wait(600)
+            }
         }
         Logx.i("Ble", "json-> (${parts.size}ch) ${json.take(300)}")
         return true
