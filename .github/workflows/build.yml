@@ -18,11 +18,7 @@ jobs:
           path: debug.keystore
           key: debug-keystore-v1
       - if: steps.ks.outputs.cache-hit != 'true'
-        run: |
-          keytool -genkeypair -keystore debug.keystore -alias androiddebugkey \\
-            -keyalg RSA -keysize 2048 -validity 10000 \\
-            -storepass android -keypass android \\
-            -dname "CN=Android Debug,O=Android,C=US"
+        run: keytool -genkeypair -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -65,11 +61,7 @@ jobs:
           path: debug.keystore
           key: debug-keystore-v1
       - if: steps.ks.outputs.cache-hit != 'true'
-        run: |
-          keytool -genkeypair -keystore debug.keystore -alias androiddebugkey \\
-            -keyalg RSA -keysize 2048 -validity 10000 \\
-            -storepass android -keypass android \\
-            -dname "CN=Android Debug,O=Android,C=US"
+        run: keytool -genkeypair -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -86,8 +78,8 @@ jobs:
             adb shell am start -n com.rayneo.bridge/.MainActivity
             sleep 6
             if adb logcat -d | grep -q "FATAL EXCEPTION"; then adb logcat -d | grep -A5 "FATAL EXCEPTION"; exit 1; fi
-            adb logcat -d | grep -E "rayneo|Mcp|AndroidRuntime" | tail -15
-            adb shell ss -ltn 2>/dev/null | grep 8766 || echo "WARN: 8766 not listening"
+            adb logcat -d | grep -E "I/App|I/Mcp" | tail -8
+            adb shell ss -ltn | grep 8766 || echo "WARN: 8766 not listening"
             adb forward tcp:8766 tcp:8766
             for i in 1 2 3; do curl -sf -m 5 -X POST http://127.0.0.1:8766/mcp -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" > /tmp/mcp.json && break || sleep 3; done
             grep -q "tools" /tmp/mcp.json || { echo "::error::MCP tools/list 未就绪"; cat /tmp/mcp.json 2>/dev/null; exit 1; }
