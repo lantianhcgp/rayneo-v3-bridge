@@ -100,10 +100,7 @@ class BleLink {
     }
 
     @SuppressLint("MissingPermission")
-    fun connect(mac: String) {
-        synchronized(this) {
-            g?.let { gg -> try { gg.disconnect() } catch (e: Exception) {} ; try { gg.close() } catch (e: Exception) {} ; g = null }
-        }
+    fun connect(mac: String?): Boolean {
         val target = mac ?: Config.targetMac
         if (target.isEmpty()) return false
         Config.targetMac = target
@@ -137,10 +134,9 @@ class BleLink {
         parts.forEachIndexed { i, part ->
             val seq = if (i == parts.lastIndex) 0 else i + 1
             val bytes = byteArrayOf(seq.toByte()) + part.toByteArray()
-            var ok = false
-            for (att in 0..2) { ch.value = bytes; ok = g.writeCharacteristic(ch); if (ok) break; Thread.sleep(60) }
-            if (!ok) { Logx.i("Ble", "chunk $i write failed after retry"); return false }
-            Thread.sleep(60)
+            ch.value = bytes
+            if (!g.writeCharacteristic(ch)) { Logx.e("Ble", "chunk $i write failed"); return false }
+            Thread.sleep(40)
         }
         Logx.i("Ble", "json-> (${parts.size}ch) ${json.take(300)}")
         return true
