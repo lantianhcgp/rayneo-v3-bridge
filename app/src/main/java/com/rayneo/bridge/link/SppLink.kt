@@ -58,7 +58,7 @@ class SppLink(private val callbacks: Callbacks) {
                 val s = openSocket(dev)
                 socket = s
                 s.connect()
-                Logx.i("Spp", "connected to $mac via channel=" + s.channel)
+                Logx.i("Spp", "connected to $mac")
                 setState(State.CONNECTED)
                 startReader(s.inputStream)
                 startWriter(s.outputStream)
