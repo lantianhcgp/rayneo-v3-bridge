@@ -1,6 +1,7 @@
 package com.rayneo.bridge
 
 import android.Manifest
+import android.bluetooth.BluetoothManager
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
