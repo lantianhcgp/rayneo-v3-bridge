@@ -55,11 +55,10 @@ class SppLink(private val callbacks: Callbacks) {
         Thread {
             try {
                 ad.cancelDiscovery()
-                // insecure RFCOMM：复用系统 bond，不弹配对
-                val s = dev.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
+                val s = openSocket(dev)
                 socket = s
-                s.connect() // 阻塞；系统已配对则直连
-                Logx.i("Spp", "connected to $mac")
+                s.connect()
+                Logx.i("Spp", "connected to $mac via channel=" + s.channel)
                 setState(State.CONNECTED)
                 startReader(s.inputStream)
                 startWriter(s.outputStream)
@@ -70,6 +69,17 @@ class SppLink(private val callbacks: Callbacks) {
             }
         }.start()
         return true
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun openSocket(dev: BluetoothDevice): BluetoothSocket {
+        try { return dev.createInsecureRfcommSocketToServiceRecord(SPP_UUID).also { Logx.i("Spp", "variant=insecure") } } catch (e: Exception) { Logx.e("Spp", "insecure create fail: ${e.message}") }
+        try { return dev.createRfcommSocketToServiceRecord(SPP_UUID).also { Logx.i("Spp", "variant=secure") } } catch (e: Exception) { Logx.e("Spp", "secure create fail: ${e.message}") }
+        try {
+            val s = dev.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType).invoke(dev, 1) as BluetoothSocket
+            Logx.i("Spp", "variant=reflect-channel1"); return s
+        } catch (e: Exception) { Logx.e("Spp", "reflect fail: ${e.message}") }
+        throw IllegalStateException("all SPP variants failed")
     }
 
     private fun startReader(input: InputStream) {

@@ -142,7 +142,12 @@ class McpServer {
             val ok = LinkManager.connect(mac)
             Json.write(mapOf("connecting" to ok, "target" to (mac ?: LinkManager.status()["mac"])))
         }
-        "disconnect" -> { LinkManager.disconnect(); Json.write(mapOf("ok" to true)) }
+        "disconnect" -> { LinkManager.disconnect(); LinkManager.ble.disconnect(); Json.write(mapOf("ok" to true)) }
+        "connect_ble" -> {
+            val mac = args["mac"] as? String
+            val ok = LinkManager.ble.connect(mac)
+            Json.write(mapOf("connecting" to ok, "target" to (mac ?: LinkManager.status()["mac"])))
+        }
         "assistant_send" -> {
             val type = (args["msgType"] as? Number)?.toInt() ?: 5
             val text = args["text"] as? String ?: ""
@@ -183,6 +188,7 @@ class McpServer {
             tool("devices", "列出系统已配对蓝牙设备（找眼镜 MAC）", mapOf()),
             tool("connect", "连接眼镜 SPP", mapOf("mac" to prop("string", "目标 MAC，省略用已存配置"))),
             tool("disconnect", "断开眼镜", mapOf()),
+            tool("connect_ble", "连接眼镜 BLE GATT（b81d 控制链）", mapOf("mac" to prop("string", "目标 MAC，省略用配置"))),
             tool("assistant_send", "向眼镜发助手消息（msgType=5 为 ASR 文本，会显示/朗读）",
                 mapOf("msgType" to prop("integer", "助手消息类型"), "text" to prop("string", "文本内容"))),
             tool("assistant_events", "最近50条助手通道消息观测（类型/方向/长度/头部hex）", mapOf()),

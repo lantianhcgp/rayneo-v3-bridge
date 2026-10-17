@@ -22,10 +22,13 @@ object LinkManager {
         }
     })
 
+    val ble = BleLink()
+
     @Volatile var stateListener: ((String) -> Unit)? = null
 
     fun status(): Map<String, Any?> = mapOf(
         "spp" to spp.currentState().name,
+        "ble" to ble.state.name,
         "mac" to Config.targetMac
     )
 
