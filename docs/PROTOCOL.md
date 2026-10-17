@@ -45,3 +45,10 @@
 
 ## 附录：完整 URI 清单（165 条）
 见同目录 uri_list.txt
+
+## 7. v0.1.7 真机标定结论（19 条完整消息，23:11 实测）
+- 信封实锤：`{"payload":{"cmd":"<命令>","data":"<嵌套JSON字符串>"},"id":"<请求uuid回显>","uri":"ble.request.<业务>"}`
+- 状态推送：`{"generalStatus":{battery,brightness,deviceName,bluetoothAddress,deviceWearingState,fw…}}`、`{"generalSettings":{cu,firmwareVersion,authVersion…}}`
+- 方向发现：uri 命名空间双向共用——抓到的多为**眼镜→手机**的状态轮询请求（get/g_note_state/have_mfi_chip/countdown/radio_station_state/agent_store_state/fota_status）
+- MTU：官方 App 连接后 ATT 包升至 253B，首字节仍是循环计数器；重组器 v0.1.7 已适配
+- 助手链路：我方连接可唤醒语音助手，音频路由到我方 App（官方 App 未连时）→ 需实现 BusinessID=14/assistant JSON 应答（下一步）
