@@ -10,8 +10,8 @@ android {
         applicationId = "com.rayneo.bridge"
         minSdk = 29
         targetSdk = 34
-        versionCode = 10
-        versionName = "0.1.9"
+        versionCode = 11
+        versionName = "0.2.0"
     }
     buildTypes {
         release {

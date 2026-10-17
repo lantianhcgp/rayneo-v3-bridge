@@ -27,6 +27,7 @@ class BleLink {
     /** 从缓冲里切出所有完整的 JSON 对象（括号平衡 + 字符串感知） */
     private fun drainJsonBuffer() {
         while (true) {
+            if (synchronized(buf) { buf.size() } > 16384) { Logx.i("Ble", "buffer poisoned by non-JSON, reset"); synchronized(buf) { buf.reset() }; return }
             val bytes = synchronized(buf) { buf.toByteArray() }
             // 跳到第一个 '{'
             val start = bytes.indexOfFirst { it == '{'.code.toByte() }
@@ -83,6 +84,7 @@ class BleLink {
             }
             state = State.READY
             Logx.i("Ble", "READY write=" + (svc.getCharacteristic(CHAR_WRITE) != null) + " receive=" + (svc.getCharacteristic(CHAR_RECEIVE) != null) + " heart=" + (svc.getCharacteristic(CHAR_HEART) != null))
+            g?.requestMtu(247)
         }
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic) {
             val v = ch.value ?: return
