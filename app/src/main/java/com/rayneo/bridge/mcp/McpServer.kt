@@ -147,6 +147,11 @@ class McpServer {
             val hex = args["hex"] as? String ?: ""
             if (hex.isEmpty()) Json.write(mapOf("error" to "no hex")) else Json.write(mapOf("sent" to LinkManager.ble.sendHex(hex)))
         }
+        "ble_send_json" -> {
+            val j = args["json"] as? String ?: ""
+            if (j.isEmpty()) Json.write(mapOf("error" to "no json")) else Json.write(mapOf("sent" to LinkManager.ble.sendJson(j)))
+        }
+        "ble_messages" -> Json.write(mapOf("messages" to LinkManager.ble.recentMessages()))
         "connect_ble" -> {
             val mac = args["mac"] as? String
             val ok = LinkManager.ble.connect(mac)
@@ -194,6 +199,8 @@ class McpServer {
             tool("disconnect", "断开眼镜", mapOf()),
             tool("connect_ble", "连接眼镜 BLE GATT（b81d 控制链）", mapOf("mac" to prop("string", "目标 MAC，省略用配置"))),
             tool("ble_send", "向眼镜 BLE write 特征值发十六进制帧", mapOf("hex" to prop("string", "hex 载荷，如 AB 55 00 00"))),
+            tool("ble_send_json", "向眼镜发 JSON 指令（自动分片 01..00）", mapOf("json" to prop("string", "完整 JSON，如 {"id":"1","uri":"ble.request.xxx"}"))),
+            tool("ble_messages", "查看眼镜推来的完整 JSON 消息（重组后）", mapOf()),
             tool("assistant_send", "向眼镜发助手消息（msgType=5 为 ASR 文本，会显示/朗读）",
                 mapOf("msgType" to prop("integer", "助手消息类型"), "text" to prop("string", "文本内容"))),
             tool("assistant_events", "最近50条助手通道消息观测（类型/方向/长度/头部hex）", mapOf()),

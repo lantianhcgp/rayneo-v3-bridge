@@ -12,7 +12,7 @@ import java.util.UUID
 class App : Application() {
     companion object {
         lateinit var app: App
-        const val version = "0.1.0"
+        const val version = "0.1.4"
         val mcp = McpServer()
     }
 

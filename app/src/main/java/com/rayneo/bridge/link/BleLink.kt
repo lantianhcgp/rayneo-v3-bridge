@@ -18,6 +18,10 @@ class BleLink {
     @Volatile var state = State.IDLE
     @Volatile private var gatt: BluetoothGatt? = null
     var rxListener: ((ByteArray) -> Unit)? = null
+    private val buf = java.io.ByteArrayOutputStream()
+    private val msgs = ArrayDeque<String>()
+
+    fun recentMessages(): List<String> = synchronized(msgs) { msgs.takeLast(50) }
 
     companion object {
         val SVC = UUID.fromString("0000b81d-0000-1000-8000-00805f9b34fb")
@@ -50,8 +54,19 @@ class BleLink {
         }
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic) {
             val v = ch.value ?: return
-            Logx.i("Ble", "rx char=${ch.uuid} len=${v.size} head=" + v.take(16).joinToString(" ") { "%02X".format(it) })
+            if (ch.uuid != CHAR_RECEIVE && ch.uuid != CHAR_HEART) { Logx.i("Ble", "rx other char=${ch.uuid} len=${v.size}"); return }
+            if (v.isEmpty()) return
+            val seq = v[0].toInt() and 0xFF
+            if (seq == 1) buf.reset()
+            buf.write(v, 1, v.size - 1)
+            Logx.i("Ble", "rx seq=$seq len=${v.size}")
             rxListener?.invoke(v)
+            if (seq == 0) {
+                val msg = String(buf.toByteArray(), Charsets.UTF_8)
+                buf.reset()
+                synchronized(msgs) { msgs.addLast(msg); while (msgs.size > 100) msgs.removeFirst() }
+                Logx.i("Ble", "json<- ${msg.take(400)}")
+            }
         }
         override fun onCharacteristicWrite(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) {
             if (status != 0) Logx.e("Ble", "write status=$status")
@@ -81,6 +96,24 @@ class BleLink {
         val ok = g.writeCharacteristic(ch)
         Logx.i("Ble", "tx ${bytes.size}B hex=$hex ok=$ok")
         return ok
+    }
+
+    /** 发送 JSON 消息：分19字节片，seq 01..0N,00(尾)，写 CHAR_WRITE */
+    @SuppressLint("MissingPermission")
+    fun sendJson(json: String): Boolean {
+        val g = gatt ?: return false
+        val ch = g.getService(SVC)?.getCharacteristic(CHAR_WRITE) ?: return false
+        val parts = json.toByteArray(Charsets.UTF_8).toList().chunked(19)
+        ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        parts.forEachIndexed { i, part ->
+            val seq = if (i == parts.lastIndex) 0 else i + 1
+            val bytes = byteArrayOf(seq.toByte()) + part.toByteArray()
+            ch.value = bytes
+            if (!g.writeCharacteristic(ch)) { Logx.e("Ble", "chunk $i write failed"); return false }
+            Thread.sleep(40)
+        }
+        Logx.i("Ble", "json-> (${parts.size}ch) ${json.take(300)}")
+        return true
     }
 
     @SuppressLint("MissingPermission")
