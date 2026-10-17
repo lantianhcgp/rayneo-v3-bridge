@@ -87,9 +87,10 @@ class BleLink {
             val v = ch.value ?: return
             if (ch.uuid != CHAR_RECEIVE && ch.uuid != CHAR_HEART) { Logx.i("Ble", "rx other char=${ch.uuid} len=${v.size}"); return }
             if (v.isEmpty()) return
-            // 每个 ATT 包首字节 = 眼镜固件的循环计数器(01/02/00..)，直接剥离；边界用 JSON 括号平衡判定
-            buf.write(v, 1, v.size - 1)
-            Logx.i("Ble", "rx cnt=${v[0]} len=${v.size}")
+            // 小包(<=20B, MTU未协商)首字节=循环计数器需剥掉；大包(官方App拉高MTU后253B)整包是数据
+            if (v.size <= 20) buf.write(v, 1, v.size - 1) else buf.write(v, 0, v.size)
+            val head = v.take(16).joinToString(" ") { "%02x".format(it) }
+            Logx.i("Ble", "rx len=${v.size} head=$head")
             rxListener?.invoke(v)
             drainJsonBuffer()
         }
