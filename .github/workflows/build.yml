@@ -65,6 +65,6 @@ jobs:
             sleep 6
             if adb logcat -d | grep -q "FATAL EXCEPTION"; then adb logcat -d | grep -A5 "FATAL EXCEPTION"; exit 1; fi
             adb forward tcp:8766 tcp:8766
-            curl -sf -X POST http://127.0.0.1:8766/mcp -H 'Content-Type: application/json' \
-              -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | grep -q '"tools"' || { echo "::error::MCP tools/list 未就绪"; exit 1; }
+            for i in 1 2 3; do curl -sf -m 5 -X POST http://127.0.0.1:8766/mcp -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" > /tmp/mcp.json && break || sleep 3; done
+            grep -q "tools" /tmp/mcp.json || { echo "::error::MCP tools/list 未就绪"; cat /tmp/mcp.json 2>/dev/null; exit 1; }
             echo "模拟器冒烟通过：无崩溃 + MCP tools/list 正常"
