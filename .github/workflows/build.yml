@@ -79,6 +79,9 @@ jobs:
             adb logcat -d | grep -E "I/App|I/Mcp" | tail -8
             adb shell ss -ltn | grep 8766 || echo "WARN: 8766 not listening"
             adb forward tcp:8766 tcp:8766
-            for i in 1 2 3; do curl -sf -m 5 -X POST http://127.0.0.1:8766/mcp -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" > /tmp/mcp.json && break || sleep 3; done
+            TOKEN=$(adb shell run-as com.rayneo.bridge cat shared_prefs/bridge.xml | grep -oP 'mcp_token">\K[a-z0-9]+')
+            echo "token=$TOKEN"
+            for i in 1 2 3; do curl -sf -m 5 -X POST http://127.0.0.1:8766/mcp -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" > /tmp/mcp.json && break || sleep 3; done
+            echo "resp_head=$(head -c 80 /tmp/mcp.json 2>/dev/null)"
             grep -q "tools" /tmp/mcp.json || { echo "::error::MCP tools/list 未就绪"; cat /tmp/mcp.json 2>/dev/null; exit 1; }
             echo "模拟器冒烟通过：无崩溃 + MCP tools/list 正常"
