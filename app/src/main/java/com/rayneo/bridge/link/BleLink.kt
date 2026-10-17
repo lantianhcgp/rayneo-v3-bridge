@@ -88,7 +88,7 @@ class BleLink {
             if (ch.uuid != CHAR_RECEIVE && ch.uuid != CHAR_HEART) { Logx.i("Ble", "rx other char=${ch.uuid} len=${v.size}"); return }
             if (v.isEmpty()) return
             // 小包(<=20B, MTU未协商)首字节=循环计数器需剥掉；大包(官方App拉高MTU后253B)整包是数据
-            if (v.size <= 20) buf.write(v, 1, v.size - 1) else buf.write(v, 0, v.size)
+            buf.write(v, 1, v.size - 1)
             val head = v.take(16).joinToString(" ") { "%02x".format(it) }
             Logx.i("Ble", "rx len=${v.size} head=$head")
             rxListener?.invoke(v)
@@ -100,7 +100,10 @@ class BleLink {
     }
 
     @SuppressLint("MissingPermission")
-    fun connect(mac: String?): Boolean {
+    fun connect(mac: String) {
+        synchronized(this) {
+            g?.let { gg -> try { gg.disconnect() } catch (e: Exception) {} ; try { gg.close() } catch (e: Exception) {} ; g = null }
+        }
         val target = mac ?: Config.targetMac
         if (target.isEmpty()) return false
         Config.targetMac = target
@@ -134,9 +137,10 @@ class BleLink {
         parts.forEachIndexed { i, part ->
             val seq = if (i == parts.lastIndex) 0 else i + 1
             val bytes = byteArrayOf(seq.toByte()) + part.toByteArray()
-            ch.value = bytes
-            if (!g.writeCharacteristic(ch)) { Logx.e("Ble", "chunk $i write failed"); return false }
-            Thread.sleep(40)
+            var ok = false
+            for (att in 0..2) { ch.value = bytes; ok = g.writeCharacteristic(ch); if (ok) break; Thread.sleep(60) }
+            if (!ok) { Logx.i("Ble", "chunk $i write failed after retry"); return false }
+            Thread.sleep(60)
         }
         Logx.i("Ble", "json-> (${parts.size}ch) ${json.take(300)}")
         return true
