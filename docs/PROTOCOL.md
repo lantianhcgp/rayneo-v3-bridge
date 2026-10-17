@@ -59,3 +59,10 @@
 - **手机→眼镜"让它说话"的候选**：ble.response.speech / ble.response.prompter_message（提词器朗读），配合 scripts/speak_test.py 候选矩阵真机验证中
 - v0.2.0：requestMtu(247)（减少分片数）+ 非JSON缓冲16KB防毒（二进制帧混入时自动重置）
 - REA 大APK加载超600s限制：768MB 包用 REA 检索不可行，定向 jadx 单 dex（classes9）2-3分钟出货，后续检索默认走这条路
+
+## 9. 晨间架构级发现（07:15-07:30 真机）
+- **V3 AI 分层实锤**：紫灯亮（AI会话激活）期间我方 receive 特征值**零数据包** + 手机无 PAN/BNEP 网络接口 → V3 的 AI 对话 = 眼镜自带联网（经手机 BT 网络共享做猫）直连雷鸟云，**不经过手机 App 的助手 SDK**（BusinessID=14 助手栈系他型号/遗留）
+- **答案回传闭环假设（待实验）**：眼镜拿到云端回答后 → 以 `ble.request.online_tts {cmd:"play", data:"<回答纯文本>"}` 发回手机朗读（V4BleDataAssistant 消费已证实）→ **拦截点零破解**：我方并行连接即可收到答案文本
+- 官方 App 的 AI 可用前提 = 它维持了手机给眼镜的网络共享（status network=2/Tethering 见于官方会话期）
+- speak_test 6 候选（prompter 系+speech）全静默 → 手机→眼镜 JSON 直发不是朗读通道，朗读回程大概率就是 online_tts 反向请求 + 官方 SpeechSdkManager 音频流
+- 下一步：①官方App问答期抓 play 请求（验证拦截点）②研究 LnBtService 网络共享实现（v0.3 免官方App供网）③找到手机→眼镜音频回程（SpeechSdkManager 对端）
