@@ -10,10 +10,11 @@ import json, uuid, subprocess, sys, time
 TOKEN = sys.argv[1] if len(sys.argv) > 1 else "c9e7f7b65533454e839d4c4c"
 TEXT = "你好，我是桥接助手"
 CANDIDATES = [
-    ("ble.response.speech", "set", "text", TEXT),
     ("ble.response.prompter_message", "set", "text", TEXT),
+    ("ble.response.prompter_message", "play", "text", TEXT),
+    ("ble.response.prompter_file", "set", "content", TEXT),
+    ("ble.response.prompter_file", "play", "content", TEXT),
     ("ble.response.speech", "play", "text", TEXT),
-    ("ble.response.prompter_message", "speak", "content", TEXT),
     ("ble.response.prompter_message", "set", "message", TEXT),
 ]
 
