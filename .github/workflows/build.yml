@@ -20,9 +20,11 @@ jobs:
       - name: re-sign with repo keystore (authoritative)
         run: |
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
-          zipalign -f 4 "$APK" /tmp/aligned.apk
-          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out /tmp/signed.apk /tmp/aligned.apk
-          FP=$(apksigner verify --print-certs /tmp/signed.apk | grep "SHA-256 digest" | awk '{print $NF}')
+          BT="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)"
+          echo "build-tools=$BT"
+          "$BT/zipalign" -f 4 "$APK" /tmp/aligned.apk
+          "$BT/apksigner" sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out /tmp/signed.apk /tmp/aligned.apk
+          FP=$("$BT/apksigner" verify --print-certs /tmp/signed.apk | grep "SHA-256 digest" | awk '{print $NF}')
           EXPECTED=$(keytool -exportcert -alias androiddebugkey -keystore debug.keystore -storepass android 2>/dev/null | sha256sum | cut -d' ' -f1)
           echo "signed_fp=$FP expected=$EXPECTED"
           if [ "$FP" != "$EXPECTED" ]; then echo "::error::重签后指纹仍不匹配"; exit 1; fi
