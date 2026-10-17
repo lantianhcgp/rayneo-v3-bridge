@@ -52,3 +52,10 @@
 - 方向发现：uri 命名空间双向共用——抓到的多为**眼镜→手机**的状态轮询请求（get/g_note_state/have_mfi_chip/countdown/radio_station_state/agent_store_state/fota_status）
 - MTU：官方 App 连接后 ATT 包升至 253B，首字节仍是循环计数器；重组器 v0.1.7 已适配
 - 助手链路：我方连接可唤醒语音助手，音频路由到我方 App（官方 App 未连时）→ 需实现 BusinessID=14/assistant JSON 应答（下一步）
+
+## 8. 夜间深挖结论（v0.2.0，classes9 定向重导）
+- **载荷类实锤**：cn.rayneo.mercury.common.pipeline.Payload{cmd:String, data:String?, useCompress:Boolean?}
+- **online_tts 方向考证**：`OnlineTtsRequest` 由 CCDirectMsgRepo.receiveDirectMsg 解析后 emit 到 SharedFlow——是**眼镜→手机**请求（眼镜请手机用云端 TTS 念文本），故手机侧发送该 uri 无响应属正常
+- **手机→眼镜"让它说话"的候选**：ble.response.speech / ble.response.prompter_message（提词器朗读），配合 scripts/speak_test.py 候选矩阵真机验证中
+- v0.2.0：requestMtu(247)（减少分片数）+ 非JSON缓冲16KB防毒（二进制帧混入时自动重置）
+- REA 大APK加载超600s限制：768MB 包用 REA 检索不可行，定向 jadx 单 dex（classes9）2-3分钟出货，后续检索默认走这条路
