@@ -144,8 +144,8 @@ class McpServer {
         }
         "disconnect" -> { LinkManager.disconnect(); LinkManager.ble.disconnect(); Json.write(mapOf("ok" to true)) }
         "ble_send" -> {
-            val hex = args["hex"] as? String ?: return Json.write(mapOf("error" to "no hex"))
-            Json.write(mapOf("sent" to LinkManager.ble.sendHex(hex)))
+            val hex = args["hex"] as? String ?: ""
+            if (hex.isEmpty()) Json.write(mapOf("error" to "no hex")) else Json.write(mapOf("sent" to LinkManager.ble.sendHex(hex)))
         }
         "connect_ble" -> {
             val mac = args["mac"] as? String
