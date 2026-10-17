@@ -199,7 +199,7 @@ class McpServer {
             tool("disconnect", "断开眼镜", mapOf()),
             tool("connect_ble", "连接眼镜 BLE GATT（b81d 控制链）", mapOf("mac" to prop("string", "目标 MAC，省略用配置"))),
             tool("ble_send", "向眼镜 BLE write 特征值发十六进制帧", mapOf("hex" to prop("string", "hex 载荷，如 AB 55 00 00"))),
-            tool("ble_send_json", "向眼镜发 JSON 指令（自动分片 01..00）", mapOf("json" to prop("string", "完整 JSON，如 {"id":"1","uri":"ble.request.xxx"}"))),
+            tool("ble_send_json", "向眼镜发 JSON 指令（自动分片 01..00）", mapOf("json" to prop("string", "完整 JSON 信封，字段 id/uri 等"))),
             tool("ble_messages", "查看眼镜推来的完整 JSON 消息（重组后）", mapOf()),
             tool("assistant_send", "向眼镜发助手消息（msgType=5 为 ASR 文本，会显示/朗读）",
                 mapOf("msgType" to prop("integer", "助手消息类型"), "text" to prop("string", "文本内容"))),
