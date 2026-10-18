@@ -183,6 +183,10 @@ class McpServer {
             (args["mcp_token"] as? String)?.let { Config.mcpToken = it }
             Json.write(mapOf("ok" to true, "note" to "mcp_port 需重启 App 生效"))
         }
+        "vpn_start" -> { startService(android.content.Intent(App.app, com.rayneo.bridge.vpn.DnsObserverService::class.java)); Json.write(mapOf("started" to true, "note" to "首次会弹VPN授权，需用户确认")) }
+        "vpn_stop" -> { App.app.stopService(android.content.Intent(App.app, com.rayneo.bridge.vpn.DnsObserverService::class.java)); com.rayneo.bridge.vpn.DnsObserverService.running = false; Json.write(mapOf("stopped" to true)) }
+        "vpn_hosts" -> Json.write(com.rayneo.bridge.vpn.DnsObserverService.hostCounts().entries.sortedByDescending { it.value }.take(50).associate { it.key to it.value })
+        "vpn_events" -> Json.write(mapOf("events" to com.rayneo.bridge.vpn.DnsObserverService.eventsTail((args["lines"] as? Number)?.toInt() ?: 50)))
         else -> Json.write(mapOf("error" to "unknown tool $name"))
     }
 
@@ -211,7 +215,11 @@ class McpServer {
                 "target_mac" to prop("string", "眼镜MAC"), "llm_endpoint" to prop("string", "OpenAI兼容base_url"),
                 "llm_key" to prop("string", "API key"), "llm_model" to prop("string", "模型名"),
                 "mcp_token" to prop("string", "MCP访问token")
-            ))
+            )),
+            tool("vpn_start", "启动 DNS 观测器（首次需用户点 VPN 授权弹窗）", mapOf()),
+            tool("vpn_stop", "停止 DNS 观测器", mapOf()),
+            tool("vpn_hosts", "DNS 观测：域名计数", mapOf()),
+            tool("vpn_events", "DNS 观测：最近查询流", mapOf("lines" to prop("integer", "条数默认50")))
         )
 
         private fun prop(type: String, desc: String) = mapOf("type" to type, "description" to desc)
