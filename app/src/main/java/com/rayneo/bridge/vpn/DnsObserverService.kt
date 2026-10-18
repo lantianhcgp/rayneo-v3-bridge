@@ -19,7 +19,8 @@ import java.util.ArrayDeque
 class DnsObserverService : VpnService() {
 
     companion object {
-        @Volatile var running = false
+        @Volatile private var running = false
+            private var pfdRef: android.os.ParcelFileDescriptor? = null
         private val events = ArrayDeque<String>()   // "ts domain"
         private val counts = LinkedHashMap<String, Int>()
         fun eventsTail(n: Int): List<String> = synchronized(events) { events.toList().takeLast(n) }
@@ -58,6 +59,7 @@ class DnsObserverService : VpnService() {
             .addDnsServer("10.111.222.53")
             .establish() ?: run { Logx.e("Vpn", "establish failed"); return }
         running = true
+        pfdRef = pfd
         Thread({ pump(pfd.fileDescriptor) }, "dns-observer").apply { isDaemon = true; start() }
         Logx.i("Vpn", "DNS observer started")
     }
@@ -69,7 +71,7 @@ class DnsObserverService : VpnService() {
         val udp = DatagramSocket()
         try { protect(udp) } catch (e: Exception) { Logx.e("Vpn", "protect fail: $e") }
         while (running) {
-            val n = try { inp.read(buf) } catch (e: Exception) { -1 }
+            val n = try { inp.read(buf) } catch (e: Exception) { Logx.e("Vpn", "read err: $e"); -1 }
             if (n <= 0) break
             // IPv4 + UDP/53 校验
             if (n < 28 || buf[0].toInt() shr 4 != 4) continue
