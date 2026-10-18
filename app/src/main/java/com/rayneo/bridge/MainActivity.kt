@@ -26,8 +26,25 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 4242) {
+            if (resultCode == RESULT_OK) {
+                Logx.i("Vpn", "VPN 授权成功，启动观测器")
+                startService(android.content.Intent(this, com.rayneo.bridge.vpn.DnsObserverService::class.java))
+            } else {
+                Logx.i("Vpn", "VPN 授权被拒绝")
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.getBooleanExtra("vpn_consent", false) == true) {
+            val prep = android.net.VpnService.prepare(this)
+            if (prep != null) startActivityForResult(prep, 4242)
+            else startService(android.content.Intent(this, com.rayneo.bridge.vpn.DnsObserverService::class.java))
+        }
         val dp = resources.displayMetrics.density
         fun px(v: Int) = (v * dp).toInt()
 

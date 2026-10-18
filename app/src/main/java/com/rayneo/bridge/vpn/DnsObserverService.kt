@@ -36,6 +36,16 @@ class DnsObserverService : VpnService() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 标准授权流：未授权时唤起 MainActivity 跑 prepare() 授权弹窗，授权后由主页重启本服务
+        val prep = prepare(this)
+        if (prep != null) {
+            Logx.i("Vpn", "需要授权，唤起授权页")
+            val i = Intent(this, com.rayneo.bridge.MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra("vpn_consent", true)
+            try { startActivity(i) } catch (e: Exception) { Logx.e("Vpn", "唤起授权页失败: $e") }
+            return START_NOT_STICKY
+        }
         if (!running) startDns()
         return START_STICKY
     }
