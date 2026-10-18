@@ -183,7 +183,7 @@ class McpServer {
             (args["mcp_token"] as? String)?.let { Config.mcpToken = it }
             Json.write(mapOf("ok" to true, "note" to "mcp_port 需重启 App 生效"))
         }
-        "vpn_start" -> { startService(android.content.Intent(App.app, com.rayneo.bridge.vpn.DnsObserverService::class.java)); Json.write(mapOf("started" to true, "note" to "首次会弹VPN授权，需用户确认")) }
+        "vpn_start" -> { App.app.startService(android.content.Intent(App.app, com.rayneo.bridge.vpn.DnsObserverService::class.java)); Json.write(mapOf("started" to true, "note" to "首次会弹VPN授权，需用户确认")) }
         "vpn_stop" -> { App.app.stopService(android.content.Intent(App.app, com.rayneo.bridge.vpn.DnsObserverService::class.java)); com.rayneo.bridge.vpn.DnsObserverService.running = false; Json.write(mapOf("stopped" to true)) }
         "vpn_hosts" -> Json.write(com.rayneo.bridge.vpn.DnsObserverService.hostCounts().entries.sortedByDescending { it.value }.take(50).associate { it.key to it.value })
         "vpn_events" -> Json.write(mapOf("events" to com.rayneo.bridge.vpn.DnsObserverService.eventsTail((args["lines"] as? Number)?.toInt() ?: 50)))

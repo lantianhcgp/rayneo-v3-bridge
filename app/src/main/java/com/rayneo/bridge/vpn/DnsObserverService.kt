@@ -48,11 +48,11 @@ class DnsObserverService : VpnService() {
             .addDnsServer("10.111.222.53")
             .establish() ?: run { Logx.e("Vpn", "establish failed"); return }
         running = true
-        Thread({ pump(pfd.fileDescriptor.fd) }, "dns-observer").apply { isDaemon = true; start() }
+        Thread({ pump(pfd.fileDescriptor) }, "dns-observer").apply { isDaemon = true; start() }
         Logx.i("Vpn", "DNS observer started")
     }
 
-    private fun pump(fd: Int) {
+    private fun pump(fd: java.io.FileDescriptor) {
         val inp = FileInputStream(fd)
         val out = FileOutputStream(fd)
         val buf = ByteArray(4096)
