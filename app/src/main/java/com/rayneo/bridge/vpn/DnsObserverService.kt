@@ -19,7 +19,7 @@ import java.util.ArrayDeque
 class DnsObserverService : VpnService() {
 
     companion object {
-        @Volatile private var running = false
+        @Volatile var running = false
             private var pfdRef: android.os.ParcelFileDescriptor? = null
         private val events = ArrayDeque<String>()   // "ts domain"
         private val counts = LinkedHashMap<String, Int>()
